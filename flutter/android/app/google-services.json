@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "468378495172",
+    "project_id": "caiolagana-c1455",
+    "storage_bucket": "caiolagana-c1455.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:468378495172:android:d2b8cc2839a0ca7c150191",
+        "android_client_info": {
+          "package_name": "com.musicaio.musicaio"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDtc5-CwXakCjM73PyA10m8iucbXaFiviA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
