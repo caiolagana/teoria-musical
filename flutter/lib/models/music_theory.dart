@@ -51,13 +51,13 @@ const scaleFormulas = <String, List<int>>{
 const chordFormulas = <String, List<int>>{
   'maior': [0, 4, 7],
   'menor': [0, 3, 7],
-  'diminuto': [0, 3, 6],
+  'diminuto': [0, 3, 6, 9],
   'aumentado': [0, 4, 8],
   'maior com sétima maior': [0, 4, 7, 11],
   'dominante (7)': [0, 4, 7, 10],
   'menor com sétima': [0, 3, 7, 10],
   'meio-diminuto': [0, 3, 6, 10],
-  'diminuto com sétima': [0, 3, 6, 9],
+
   'sus2': [0, 2, 7],
   'sus4': [0, 5, 7],
   'maior com nona': [0, 4, 7, 11, 14],
