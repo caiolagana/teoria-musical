@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/music_theory.dart';
+import '../services/premium_service.dart';
 import 'widgets/note_selector.dart';
 import 'widgets/fretboard_widget.dart';
 
@@ -14,6 +15,7 @@ class TeoriaScreen extends StatefulWidget {
 }
 
 class _TeoriaScreenState extends State<TeoriaScreen> {
+  final _premium = PremiumService();
   TeoriaMode _mode = TeoriaMode.scale;
   String? _selectedNote;
 
@@ -52,6 +54,7 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
                 names: scaleFormulas.keys.toList(),
                 selected: _selectedScale,
                 onSelect: (n) => setState(() => _selectedScale = n),
+                canAccess: _premium.canAccessScale,
               ),
             ),
           ],
@@ -63,6 +66,7 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
                 names: chordFormulas.keys.toList(),
                 selected: _selectedChord,
                 onSelect: (n) => setState(() => _selectedChord = n),
+                canAccess: _premium.canAccessChord,
               ),
             ),
           ],
@@ -137,32 +141,77 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
     required List<String> names,
     required String? selected,
     required ValueChanged<String> onSelect,
+    required bool Function(String) canAccess,
   }) {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: names.map((name) {
         final isActive = selected == name;
+        final locked = !canAccess(name);
         return GestureDetector(
-          onTap: () => onSelect(name),
+          onTap: () {
+            if (locked) {
+              _showPremiumDialog();
+            } else {
+              onSelect(name);
+            }
+          },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: isActive ? AppColors.accent : AppColors.surface,
-              border: Border.all(color: isActive ? AppColors.accent : AppColors.border),
+              color: isActive ? AppColors.accent : locked ? const Color(0xFF121212) : AppColors.surface,
+              border: Border.all(color: isActive ? AppColors.accent : locked ? const Color(0xFF222222) : AppColors.border),
               borderRadius: BorderRadius.circular(6),
             ),
-            child: Text(
-              name,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                color: isActive ? AppColors.black : AppColors.text,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (locked) const Padding(
+                  padding: EdgeInsets.only(right: 6),
+                  child: Icon(Icons.lock, size: 13, color: Color(0xFF555555)),
+                ),
+                Text(
+                  name,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                    color: isActive ? AppColors.black : locked ? const Color(0xFF555555) : AppColors.text,
+                  ),
+                ),
+              ],
             ),
           ),
         );
       }).toList(),
+    );
+  }
+
+  void _showPremiumDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text('Premium', style: TextStyle(color: AppColors.text)),
+        content: const Text(
+          'Este conteúdo está disponível na versão Premium.',
+          style: TextStyle(color: AppColors.textDim),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Fechar', style: TextStyle(color: AppColors.textDim)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              // TODO: integrar com Google Play Billing
+            },
+            child: const Text('Upgrade', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
     );
   }
 
