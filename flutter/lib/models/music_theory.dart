@@ -66,13 +66,32 @@ const chordFormulas = <String, List<int>>{
 };
 
 class Tuning {
+  final String id;
   final String name;
   final String label;
   final List<String> strings;
-  const Tuning({required this.name, required this.label, required this.strings});
+  final bool free;
+
+  const Tuning({
+    this.id = '',
+    required this.name,
+    required this.label,
+    required this.strings,
+    this.free = true,
+  });
+
+  factory Tuning.fromFirestore(String id, Map<String, dynamic> data) {
+    return Tuning(
+      id: id,
+      name: data['name'] as String? ?? '',
+      label: data['label'] as String? ?? '',
+      strings: List<String>.from(data['strings'] as List<dynamic>? ?? []),
+      free: data['free'] as bool? ?? false,
+    );
+  }
 }
 
-const tunings = [
+const fallbackTunings = [
   Tuning(name: 'viola_caipira_rio_abaixo', label: 'Viola Caipira (Rio Abaixo)', strings: ['G', 'D', 'G', 'B', 'D']),
   Tuning(name: 'viola_caipira_cebolao_D', label: 'Viola Caipira (Cebolão em D)', strings: ['A', 'D', 'F#', 'A', 'D']),
   Tuning(name: 'viola_caipira_cebolao_E', label: 'Viola Caipira (Cebolão em E)', strings: ['E', 'B', 'G#', 'E', 'B']),

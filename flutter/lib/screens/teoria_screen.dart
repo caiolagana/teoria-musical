@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/music_theory.dart';
 import '../services/premium_service.dart';
+import '../services/tuning_service.dart';
 import 'widgets/note_selector.dart';
 import 'widgets/fretboard_widget.dart';
 
@@ -16,6 +17,11 @@ class TeoriaScreen extends StatefulWidget {
 
 class _TeoriaScreenState extends State<TeoriaScreen> {
   final _premium = PremiumService();
+  final _tuningService = TuningService();
+
+  List<Tuning> get _tunings => _tuningService.tunings;
+  List<Tuning> get _accessibleTunings =>
+      _tunings.where((t) => _premium.canAccessTuning(t)).toList();
   TeoriaMode _mode = TeoriaMode.scale;
   String? _selectedNote;
 
@@ -223,7 +229,7 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
   Widget _buildScaleResult() {
     if (_selectedNote == null || _selectedScale == null) return const SizedBox();
     final notes = buildScale(_selectedNote!, _selectedScale!);
-    final diagrams = tunings.map((t) => buildFretboardDiagram(t, notes, _selectedNote!)).toList();
+    final diagrams = _accessibleTunings.map((t) => buildFretboardDiagram(t, notes, _selectedNote!)).toList();
     final title = 'Escala $_selectedScale de $_selectedNote';
 
     return _resultPanel(
@@ -238,8 +244,8 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
   Widget _buildChordResult() {
     if (_selectedNote == null || _selectedChord == null) return const SizedBox();
     final notes = buildChord(_selectedNote!, _selectedChord!);
-    final frets = tunings.map((t) => chordFrets(t, notes)).toList();
-    final diagrams = tunings.map((t) => buildFretboardDiagram(t, notes, _selectedNote!)).toList();
+    final frets = _accessibleTunings.map((t) => chordFrets(t, notes)).toList();
+    final diagrams = _accessibleTunings.map((t) => buildFretboardDiagram(t, notes, _selectedNote!)).toList();
     final title = 'Acorde $_selectedNote $_selectedChord';
 
     return _resultPanel(

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../models/music_theory.dart';
 
 const freeScales = {'maior', 'menor natural'};
 const freeChords = {'maior', 'menor'};
@@ -18,7 +19,9 @@ class PremiumService extends ChangeNotifier {
 
   bool isScaleFree(String name) => freeScales.contains(name);
   bool isChordFree(String name) => freeChords.contains(name);
+  bool isTuningFree(Tuning tuning) => tuning.free;
 
   bool canAccessScale(String name) => _isPremium || isScaleFree(name);
   bool canAccessChord(String name) => _isPremium || isChordFree(name);
+  bool canAccessTuning(Tuning tuning) => _isPremium || isTuningFree(tuning);
 }
