@@ -4,7 +4,7 @@ import '../models/music_theory.dart';
 import 'widgets/note_selector.dart';
 import 'widgets/fretboard_widget.dart';
 
-enum TeoriaMode { scale, chord, interval }
+enum TeoriaMode { scale, chord }
 
 class TeoriaScreen extends StatefulWidget {
   const TeoriaScreen({super.key});
@@ -16,7 +16,7 @@ class TeoriaScreen extends StatefulWidget {
 class _TeoriaScreenState extends State<TeoriaScreen> {
   TeoriaMode _mode = TeoriaMode.scale;
   String? _selectedNote;
-  String? _selectedNote2;
+
   String? _selectedScale;
   String? _selectedChord;
 
@@ -24,7 +24,6 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
     setState(() {
       _mode = mode;
       _selectedNote = null;
-      _selectedNote2 = null;
       _selectedScale = null;
       _selectedChord = null;
     });
@@ -39,22 +38,12 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
           _buildModeTabs(),
           const SizedBox(height: 16),
           _buildPanel(
-            title: _mode == TeoriaMode.interval ? 'PRIMEIRA NOTA' : 'NOTA FUNDAMENTAL',
+            title: 'NOTA FUNDAMENTAL',
             child: NoteSelector(
               selected: _selectedNote,
               onSelect: (n) => setState(() => _selectedNote = n),
             ),
           ),
-          if (_mode == TeoriaMode.interval) ...[
-            const SizedBox(height: 12),
-            _buildPanel(
-              title: 'SEGUNDA NOTA',
-              child: NoteSelector(
-                selected: _selectedNote2,
-                onSelect: (n) => setState(() => _selectedNote2 = n),
-              ),
-            ),
-          ],
           if (_mode == TeoriaMode.scale) ...[
             const SizedBox(height: 12),
             _buildPanel(
@@ -90,8 +79,6 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
         _modeTab('Escalas', TeoriaMode.scale),
         const SizedBox(width: 8),
         _modeTab('Acordes', TeoriaMode.chord),
-        const SizedBox(width: 8),
-        _modeTab('Intervalos', TeoriaMode.interval),
       ],
     );
   }
@@ -181,8 +168,7 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
 
   Widget _buildResult() {
     if (_mode == TeoriaMode.scale) return _buildScaleResult();
-    if (_mode == TeoriaMode.chord) return _buildChordResult();
-    return _buildIntervalResult();
+    return _buildChordResult();
   }
 
   Widget _buildScaleResult() {
@@ -218,41 +204,6 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
     );
   }
 
-  Widget _buildIntervalResult() {
-    if (_selectedNote == null || _selectedNote2 == null) return const SizedBox();
-    final semitones = intervalBetween(_selectedNote!, _selectedNote2!);
-    final name = intervalName(semitones);
-
-    return _resultPanel(
-      title: 'INTERVALO',
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _largeBadge(_selectedNote!),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Icon(Icons.arrow_forward, color: AppColors.textDim, size: 28),
-            ),
-            _largeBadge(_selectedNote2!),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Text(
-          '$semitones semitom${semitones != 1 ? 's' : ''}',
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w300, color: AppColors.accent),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          name[0].toUpperCase() + name.substring(1),
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 18, color: AppColors.text),
-        ),
-      ],
-    );
-  }
-
   Widget _resultPanel({required String title, required List<Widget> children}) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -280,42 +231,24 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
   Widget _noteBadges(List<String> notes) {
     return Wrap(
       alignment: WrapAlignment.center,
-      spacing: 6,
-      runSpacing: 6,
+      spacing: 8,
+      runSpacing: 8,
       children: [
-        for (int i = 0; i < notes.length; i++) ...[
-          if (i > 0) const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 2),
-            child: Text('-', style: TextStyle(color: AppColors.textDim, fontSize: 16)),
-          ),
+        for (int i = 0; i < notes.length; i++)
           Container(
-            constraints: const BoxConstraints(minWidth: 32),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
+            width: 38,
+            height: 38,
+            decoration: const BoxDecoration(
               color: AppColors.accent,
-              borderRadius: BorderRadius.circular(6),
+              shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
             child: Text(
               notes[i],
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.black),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.black),
             ),
           ),
-        ],
       ],
-    );
-  }
-
-  Widget _largeBadge(String note) {
-    return Container(
-      constraints: const BoxConstraints(minWidth: 48),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.accent,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      alignment: Alignment.center,
-      child: Text(note, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: AppColors.black)),
     );
   }
 

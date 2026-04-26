@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
           NavigationDestination(
             icon: Icon(Icons.queue_music_outlined),
             selectedIcon: Icon(Icons.queue_music, color: AppColors.black),
-            label: 'Scores',
+            label: 'Cifras',
           ),
         ],
       ),
