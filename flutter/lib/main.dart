@@ -1,14 +1,19 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'services/tuning_service.dart';
+import 'services/premium_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await TuningService().load();
+  if (kDebugMode) {
+    PremiumService().setPremium(true); // Comentar linha para remover Premium
+  }
   runApp(const MusicaioApp());
 }
 

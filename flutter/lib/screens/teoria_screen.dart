@@ -20,8 +20,6 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
   final _tuningService = TuningService();
 
   List<Tuning> get _tunings => _tuningService.tunings;
-  List<Tuning> get _accessibleTunings =>
-      _tunings.where((t) => _premium.canAccessTuning(t)).toList();
   TeoriaMode _mode = TeoriaMode.scale;
   String? _selectedNote;
 
@@ -229,14 +227,15 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
   Widget _buildScaleResult() {
     if (_selectedNote == null || _selectedScale == null) return const SizedBox();
     final notes = buildScale(_selectedNote!, _selectedScale!);
-    final diagrams = _accessibleTunings.map((t) => buildFretboardDiagram(t, notes, _selectedNote!)).toList();
     final title = 'Escala $_selectedScale de $_selectedNote';
 
     return _resultPanel(
       title: title,
       children: [
         _noteBadges(notes),
-        ...diagrams.map((d) => FretboardWidget(diagram: d)),
+        ..._tunings.map((t) => _premium.canAccessTuning(t)
+            ? FretboardWidget(diagram: buildFretboardDiagram(t, notes, _selectedNote!))
+            : _lockedTuning(t)),
       ],
     );
   }
@@ -244,8 +243,8 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
   Widget _buildChordResult() {
     if (_selectedNote == null || _selectedChord == null) return const SizedBox();
     final notes = buildChord(_selectedNote!, _selectedChord!);
-    final frets = _accessibleTunings.map((t) => chordFrets(t, notes)).toList();
-    final diagrams = _accessibleTunings.map((t) => buildFretboardDiagram(t, notes, _selectedNote!)).toList();
+    final accessibleTunings = _tunings.where((t) => _premium.canAccessTuning(t)).toList();
+    final frets = accessibleTunings.map((t) => chordFrets(t, notes)).toList();
     final title = 'Acorde $_selectedNote $_selectedChord';
 
     return _resultPanel(
@@ -254,8 +253,26 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
         _noteBadges(notes),
         const SizedBox(height: 12),
         _buildChordFrets(frets),
-        ...diagrams.map((d) => FretboardWidget(diagram: d)),
+        ..._tunings.map((t) => _premium.canAccessTuning(t)
+            ? FretboardWidget(diagram: buildFretboardDiagram(t, notes, _selectedNote!))
+            : _lockedTuning(t)),
       ],
+    );
+  }
+
+  Widget _lockedTuning(Tuning tuning) {
+    return GestureDetector(
+      onTap: _showPremiumDialog,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 16, bottom: 8),
+        child: Row(
+          children: [
+            const Icon(Icons.lock, size: 14, color: Color(0xFF555555)),
+            const SizedBox(width: 6),
+            Text(tuning.label, style: const TextStyle(fontSize: 14, color: Color(0xFF555555))),
+          ],
+        ),
+      ),
     );
   }
 
