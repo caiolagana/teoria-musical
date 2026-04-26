@@ -18,6 +18,9 @@ class Score {
   final String artist;
   final String lyrics;
   final List<ChordMark> chords;
+  final bool free;
+  final String? productId;
+  final double price;
 
   Score({
     required this.id,
@@ -25,7 +28,17 @@ class Score {
     required this.artist,
     required this.lyrics,
     required this.chords,
+    this.free = true,
+    this.productId,
+    this.price = 0,
   });
+
+  static double _parsePrice(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0;
+    return 0;
+  }
 
   factory Score.fromFirestore(String id, Map<String, dynamic> data) {
     final chordList = (data['chords'] as List<dynamic>?)
@@ -38,6 +51,9 @@ class Score {
       artist: data['artist'] as String? ?? '',
       lyrics: data['lyrics'] as String? ?? '',
       chords: chordList,
+      free: data['free'] as bool? ?? true,
+      productId: data['productId'] as String?,
+      price: _parsePrice(data['price']),
     );
   }
 }
