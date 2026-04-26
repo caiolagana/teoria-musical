@@ -10,61 +10,54 @@ class NoteSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final allNotes = <_NoteEntry>[];
+    for (final g in noteGroups) {
+      if (g.natural != null) allNotes.add(_NoteEntry(g.natural!, false));
+      if (g.sharp != null) allNotes.add(_NoteEntry(g.sharp!, true));
+      if (g.flat != null) allNotes.add(_NoteEntry(g.flat!, true));
+    }
+
     return Wrap(
-      spacing: 4,
-      runSpacing: 4,
-      alignment: WrapAlignment.center,
-      children: noteGroups.map((g) => _buildGroup(g)).toList(),
+      spacing: 8,
+      runSpacing: 8,
+      children: allNotes.map((e) => _noteChip(e.name, e.isAccidental)).toList(),
     );
   }
 
-  Widget _buildGroup(NoteGroup group) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (group.natural != null) _noteButton(group.natural!, false),
-        if (group.sharp != null) _noteButton(group.sharp!, true),
-        if (group.flat != null) _noteButton(group.flat!, true),
-      ],
-    );
-  }
-
-  Widget _noteButton(String note, bool isAccidental) {
+  Widget _noteChip(String note, bool isAccidental) {
     final isActive = selected == note;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 3),
-      child: GestureDetector(
-        onTap: () => onSelect(note),
-        child: Container(
-          constraints: BoxConstraints(minWidth: isAccidental ? 36 : 42),
-          padding: EdgeInsets.symmetric(
-            horizontal: isAccidental ? 6 : 10,
-            vertical: isAccidental ? 6 : 8,
-          ),
-          decoration: BoxDecoration(
+    return GestureDetector(
+      onTap: () => onSelect(note),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive
+              ? AppColors.accent
+              : isAccidental
+                  ? const Color(0xFF111111)
+                  : AppColors.surface,
+          border: Border.all(color: isActive ? AppColors.accent : AppColors.border),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          note,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
             color: isActive
-                ? AppColors.accent
+                ? AppColors.black
                 : isAccidental
-                    ? const Color(0xFF111111)
-                    : AppColors.surface,
-            border: Border.all(color: isActive ? AppColors.accent : AppColors.border),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            note,
-            style: TextStyle(
-              fontSize: isAccidental ? 12 : 14,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-              color: isActive
-                  ? AppColors.black
-                  : isAccidental
-                      ? const Color(0xFFAAAAAA)
-                      : AppColors.text,
-            ),
+                    ? const Color(0xFFAAAAAA)
+                    : AppColors.text,
           ),
         ),
       ),
     );
   }
+}
+
+class _NoteEntry {
+  final String name;
+  final bool isAccidental;
+  const _NoteEntry(this.name, this.isAccidental);
 }
