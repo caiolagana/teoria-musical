@@ -6,7 +6,7 @@ import '../services/tuning_service.dart';
 import 'widgets/note_selector.dart';
 import 'widgets/fretboard_widget.dart';
 
-enum TeoriaMode { scale, chord }
+enum TeoriaMode { scale, chord, harmonicField }
 
 class TeoriaScreen extends StatefulWidget {
   const TeoriaScreen({super.key});
@@ -25,6 +25,7 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
 
   String? _selectedScale;
   String? _selectedChord;
+  String? _selectedFieldType;
 
   void _setMode(TeoriaMode mode) {
     setState(() {
@@ -32,6 +33,7 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
       _selectedNote = null;
       _selectedScale = null;
       _selectedChord = null;
+      _selectedFieldType = null;
     });
   }
 
@@ -74,6 +76,18 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
               ),
             ),
           ],
+          if (_mode == TeoriaMode.harmonicField) ...[
+            const SizedBox(height: 12),
+            _buildPanel(
+              title: 'TIPO',
+              child: _buildTypeSelector(
+                names: harmonicFieldTypes,
+                selected: _selectedFieldType,
+                onSelect: (n) => setState(() => _selectedFieldType = n),
+                canAccess: _premium.canAccessHarmonicField,
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           _buildResult(),
         ],
@@ -87,6 +101,8 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
         _modeTab('Escalas', TeoriaMode.scale),
         const SizedBox(width: 8),
         _modeTab('Acordes', TeoriaMode.chord),
+        const SizedBox(width: 8),
+        _modeTab('Harmônicos', TeoriaMode.harmonicField),
       ],
     );
   }
@@ -221,7 +237,8 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
 
   Widget _buildResult() {
     if (_mode == TeoriaMode.scale) return _buildScaleResult();
-    return _buildChordResult();
+    if (_mode == TeoriaMode.chord) return _buildChordResult();
+    return _buildHarmonicFieldResult();
   }
 
   Widget _buildScaleResult() {
@@ -256,6 +273,60 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
         ..._tunings.map((t) => _premium.canAccessTuning(t)
             ? FretboardWidget(diagram: buildFretboardDiagram(t, notes, _selectedNote!))
             : _lockedTuning(t)),
+      ],
+    );
+  }
+
+  Widget _buildHarmonicFieldResult() {
+    if (_selectedNote == null || _selectedFieldType == null) return const SizedBox();
+    final chords = buildHarmonicField(_selectedNote!, _selectedFieldType!);
+    final title = 'Campo harmônico $_selectedFieldType de $_selectedNote';
+
+    return _resultPanel(
+      title: title,
+      children: [
+        ...chords.map((chord) => Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: AppColors.border)),
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 36,
+                child: Text(
+                  chord.degree,
+                  style: const TextStyle(fontSize: 14, color: AppColors.textDim, fontWeight: FontWeight.w500),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.accent,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  chord.label,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.black),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ...chord.notes.map((note) => Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF3A3A3A),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(note, style: const TextStyle(fontSize: 11, color: AppColors.text)),
+                ),
+              )),
+            ],
+          ),
+        )),
       ],
     );
   }

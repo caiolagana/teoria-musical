@@ -166,6 +166,74 @@ String intervalName(int semitones) {
   return '$semitones semitons';
 }
 
+// Harmonic Field
+
+class HarmonicFieldChord {
+  final String degree;
+  final String root;
+  final String quality;
+  final String label;
+  final List<String> notes;
+
+  const HarmonicFieldChord({
+    required this.degree,
+    required this.root,
+    required this.quality,
+    required this.label,
+    required this.notes,
+  });
+}
+
+const harmonicFieldTypes = [
+  'maior', 'menor natural', 'menor harmônica', 'menor melódica',
+  'dórica', 'frígia', 'lídia', 'mixolídia', 'lócria',
+];
+
+const _majorDegrees = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+
+String _chordQuality(int firstInterval, int secondInterval) {
+  if (firstInterval == 4 && secondInterval == 3) return 'maior';
+  if (firstInterval == 3 && secondInterval == 4) return 'menor';
+  if (firstInterval == 3 && secondInterval == 3) return 'dim';
+  if (firstInterval == 4 && secondInterval == 4) return 'aum';
+  return '';
+}
+
+String _degreeSuffix(String quality) {
+  if (quality == 'menor') return 'm';
+  if (quality == 'dim') return '°';
+  if (quality == 'aum') return '+';
+  return '';
+}
+
+List<HarmonicFieldChord> buildHarmonicField(String root, String type) {
+  final scaleNotes = buildScale(root, type);
+  scaleNotes.removeLast();
+  final result = <HarmonicFieldChord>[];
+
+  for (int i = 0; i < 7; i++) {
+    final chordRoot = scaleNotes[i];
+    final third = scaleNotes[(i + 2) % 7];
+    final fifth = scaleNotes[(i + 4) % 7];
+    final rootVal = noteValue(chordRoot);
+    final thirdInterval = ((noteValue(third) - rootVal) % 12 + 12) % 12;
+    final fifthInterval = ((noteValue(fifth) - noteValue(third)) % 12 + 12) % 12;
+    final quality = _chordQuality(thirdInterval, fifthInterval);
+    final suffix = _degreeSuffix(quality);
+    final degree = _majorDegrees[i];
+
+    result.add(HarmonicFieldChord(
+      degree: (quality == 'menor' || quality == 'dim') ? degree.toLowerCase() : degree,
+      root: chordRoot,
+      quality: quality,
+      label: '$chordRoot$suffix',
+      notes: [chordRoot, third, fifth],
+    ));
+  }
+
+  return result;
+}
+
 class FretboardCell {
   final String? note;
   final bool isRoot;
