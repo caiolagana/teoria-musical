@@ -312,15 +312,18 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
           decoration: const BoxDecoration(
             border: Border(bottom: BorderSide(color: AppColors.border)),
           ),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            crossAxisAlignment: WrapCrossAlignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(cf.tuningLabel, style: const TextStyle(fontSize: 13, color: AppColors.text)),
-              Text('(${cf.tuningStrings.join('-')})', style: const TextStyle(fontSize: 12, color: AppColors.textDim)),
               Row(
-                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(cf.tuningLabel, style: const TextStyle(fontSize: 13, color: AppColors.text)),
+                  const SizedBox(width: 6),
+                  Text('(${cf.tuningStrings.join('-')})', style: const TextStyle(fontSize: 12, color: AppColors.textDim)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
                 children: cf.frets.map((f) => Padding(
                   padding: const EdgeInsets.only(right: 4),
                   child: Container(
