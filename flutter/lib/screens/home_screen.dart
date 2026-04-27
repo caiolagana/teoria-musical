@@ -36,8 +36,8 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Teoria',
           ),
           NavigationDestination(
-            icon: Icon(Icons.tune_outlined),
-            selectedIcon: Icon(Icons.tune, color: AppColors.black),
+            icon: Icon(Icons.graphic_eq),
+            selectedIcon: Icon(Icons.graphic_eq, color: AppColors.black),
             label: 'Afinador',
           ),
           NavigationDestination(
