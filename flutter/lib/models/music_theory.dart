@@ -288,13 +288,72 @@ class ChordFrets {
 }
 
 ChordFrets chordFrets(Tuning tuning, List<String> chordNotes) {
-  final chordValues = chordNotes.map(noteValue).toSet();
-  final frets = tuning.strings.map((openNote) {
+  final chordValuesList = chordNotes.map(noteValue).toSet().toList();
+
+  final lowestFretForNote = tuning.strings.map((openNote) {
     final openVal = noteValue(openNote);
-    for (int fret = 0; fret <= maxFret; fret++) {
-      if (chordValues.contains((openVal + fret) % 12)) return fret;
-    }
-    return null;
+    return chordValuesList.map((noteVal) {
+      for (int fret = 0; fret <= maxFret; fret++) {
+        if ((openVal + fret) % 12 == noteVal) return fret;
+      }
+      return null;
+    }).toList();
   }).toList();
+
+  final assignment = List<int>.generate(tuning.strings.length, (si) {
+    int bestIdx = -1;
+    int bestFret = maxFret + 1;
+    for (int ni = 0; ni < chordValuesList.length; ni++) {
+      final f = lowestFretForNote[si][ni];
+      if (f != null && f < bestFret) {
+        bestFret = f;
+        bestIdx = ni;
+      }
+    }
+    return bestIdx;
+  });
+
+  int iterations = chordValuesList.length;
+  while (iterations-- > 0) {
+    final covered = assignment.where((n) => n >= 0).toSet();
+    if (covered.length == chordValuesList.length) break;
+
+    int missingIdx = -1;
+    for (int ni = 0; ni < chordValuesList.length; ni++) {
+      if (!covered.contains(ni)) { missingIdx = ni; break; }
+    }
+    if (missingIdx < 0) break;
+
+    int bestString = -1;
+    int bestFret = maxFret + 1;
+    bool bestRedundant = false;
+
+    for (int si = 0; si < tuning.strings.length; si++) {
+      final f = lowestFretForNote[si][missingIdx];
+      if (f == null) continue;
+      final cur = assignment[si];
+      final redundant = cur < 0 ||
+          assignment.asMap().entries.any((e) => e.key != si && e.value == cur);
+
+      if (redundant && !bestRedundant) {
+        bestString = si; bestFret = f; bestRedundant = true;
+      } else if (redundant == bestRedundant && f <= bestFret) {
+        bestString = si; bestFret = f;
+      }
+    }
+
+    if (bestString >= 0) {
+      assignment[bestString] = missingIdx;
+    } else {
+      break;
+    }
+  }
+
+  final frets = List<int?>.generate(tuning.strings.length, (si) {
+    final noteIdx = assignment[si];
+    if (noteIdx < 0) return null;
+    return lowestFretForNote[si][noteIdx];
+  });
+
   return ChordFrets(tuningLabel: tuning.label, tuningStrings: tuning.strings, frets: frets);
 }
