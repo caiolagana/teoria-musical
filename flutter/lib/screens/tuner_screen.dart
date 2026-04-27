@@ -18,6 +18,7 @@ class _TunerScreenState extends State<TunerScreen> {
   String _note = '--';
   int _octave = 4;
   double _cents = 0;
+  double _smoothCents = 0;
   double _frequency = 0;
   String? _error;
 
@@ -30,7 +31,8 @@ class _TunerScreenState extends State<TunerScreen> {
   PitchDetector? _detector;
   List<double> _sampleBuffer = [];
 
-  static const _bufferSize = 3 * 4096; // 93ms de áudio a cada 4096 amostras
+  static const _alpha = 0.25; // Controla a suavidade da agulha: 0 = parado, 1 = sem suavização
+  static const _bufferSize = 2 * 4096; // 93ms de áudio a cada 4096 amostras
 
   @override
   void dispose() {
@@ -120,11 +122,13 @@ class _TunerScreenState extends State<TunerScreen> {
           _note = result.note;
           _octave = result.octave;
           _cents = result.cents;
+          _smoothCents = _smoothCents * (1 - _alpha) + _cents * _alpha;
           _frequency = result.frequency;
         } else {
           _yinStatus = rms < 0.002 ? 'silêncio (RMS baixo)' : 'sem pitch detectado';
           _note = '--';
           _cents = 0;
+          _smoothCents = 0;
           _frequency = 0;
         }
       });
@@ -161,9 +165,7 @@ class _TunerScreenState extends State<TunerScreen> {
             const Spacer(flex: 3),
             if (_error != null) _buildError(),
             _buildToggleButton(),
-            const SizedBox(height: 16),
-            if (_isListening) _buildDebugInfo(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 48),
           ],
         ),
       ),
@@ -176,7 +178,7 @@ class _TunerScreenState extends State<TunerScreen> {
       height: 160,
       child: CustomPaint(
         painter: _GaugePainter(
-          cents: _isListening ? _cents : 0,
+          cents: _isListening ? _smoothCents : 0,
           active: _isListening && _note != '--',
           accentColor: _deviationColor,
         ),
@@ -230,7 +232,7 @@ class _TunerScreenState extends State<TunerScreen> {
           height: 40,
           child: CustomPaint(
             painter: _DeviationBarPainter(
-              cents: _isListening ? _cents : 0,
+              cents: _isListening ? _smoothCents : 0,
               active: _isListening && _note != '--',
               accentColor: _deviationColor,
             ),
@@ -239,7 +241,7 @@ class _TunerScreenState extends State<TunerScreen> {
         const SizedBox(height: 8),
         Text(
           _isListening && _note != '--'
-              ? '${_cents >= 0 ? '+' : ''}${_cents.toStringAsFixed(1)} cents'
+              ? '${_smoothCents >= 0 ? '+' : ''}${_smoothCents.toStringAsFixed(1)} cents'
               : '',
           style: TextStyle(
             fontSize: 14,
