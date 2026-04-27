@@ -38,6 +38,8 @@ dependencies:
   cloud_firestore: ^6.3.0
   firebase_auth: ^6.4.0
   in_app_purchase: ^3.2.3
+  audio_streamer: ^4.3.0
+  permission_handler: ^12.0.0
 
 dev_dependencies:
   flutter_test:
