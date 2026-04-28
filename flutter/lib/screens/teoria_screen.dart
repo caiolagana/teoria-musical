@@ -329,7 +329,7 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
                     backgroundColor: AppColors.accent,
                     foregroundColor: AppColors.black,
                   ),
-                  child: const Text('Fazer Upgrade — R\$ 9,90'),
+                  child: const Text('Fazer Upgrade — R\$ 14,90'),
                 ),
               ),
             ],
