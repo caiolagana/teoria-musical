@@ -41,9 +41,6 @@ class AuthService extends ChangeNotifier {
           await currentUser!.linkWithCredential(credential);
         } on FirebaseAuthException catch (e) {
           if (e.code == 'credential-already-in-use') {
-            if (anonymousUid != null) {
-              await _migratePurchases(anonymousUid, _uidFromCredential(credential));
-            }
             await _auth.signInWithCredential(credential);
           } else {
             rethrow;
@@ -72,25 +69,25 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> _migratePurchases(String fromUid, String toUid) async {
-    final oldPurchases = await _firestore
-        .collection('users')
-        .doc(fromUid)
-        .collection('purchases')
-        .get();
+    try {
+      final oldPurchases = await _firestore
+          .collection('users')
+          .doc(fromUid)
+          .collection('purchases')
+          .get();
 
-    if (oldPurchases.docs.isEmpty) return;
+      if (oldPurchases.docs.isEmpty) return;
 
-    final batch = _firestore.batch();
-    final newPurchasesRef = _firestore.collection('users').doc(toUid).collection('purchases');
+      final batch = _firestore.batch();
+      final newPurchasesRef = _firestore.collection('users').doc(toUid).collection('purchases');
 
-    for (final doc in oldPurchases.docs) {
-      batch.set(newPurchasesRef.doc(doc.id), doc.data(), SetOptions(merge: true));
+      for (final doc in oldPurchases.docs) {
+        batch.set(newPurchasesRef.doc(doc.id), doc.data(), SetOptions(merge: true));
+      }
+
+      await batch.commit();
+    } catch (e) {
+      if (kDebugMode) print('Purchase migration skipped: $e');
     }
-
-    await batch.commit();
-  }
-
-  String _uidFromCredential(AuthCredential credential) {
-    return currentUser?.uid ?? '';
   }
 }

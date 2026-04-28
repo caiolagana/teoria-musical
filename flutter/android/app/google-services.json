@@ -30,6 +30,14 @@
           }
         },
         {
+          "client_id": "468378495172-s2qn97ikuhokrmtn6uo1rsl7fg28bcr6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.musicaio.app",
+            "certificate_hash": "ad7147094c3122b18aa8dc21375608bee97eaaf4"
+          }
+        },
+        {
           "client_id": "468378495172-ku6o0i7l671svevocslofarouafrpov3.apps.googleusercontent.com",
           "client_type": 3
         }

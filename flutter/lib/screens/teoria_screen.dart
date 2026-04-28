@@ -223,6 +223,32 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
     );
   }
 
+  void _showLoginSuccess({VoidCallback? then}) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text('Login realizado com sucesso',
+            style: TextStyle(color: AppColors.text, fontSize: 18)),
+        content: Text(
+          AuthService().displayName ?? AuthService().email ?? '',
+          style: const TextStyle(color: AppColors.textDim),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() {});
+              then?.call();
+            },
+            child: const Text('OK', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showPremiumDialog() {
     final auth = AuthService();
 
@@ -262,7 +288,7 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
                       await PurchaseService().reloadPurchases();
                       if (ctx.mounted) {
                         Navigator.pop(ctx);
-                        _showPremiumDialog();
+                        _showLoginSuccess(then: _showPremiumDialog);
                       }
                     }
                   },
@@ -282,7 +308,7 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
                     await PurchaseService().reloadPurchases();
                     if (ctx.mounted) {
                       Navigator.pop(ctx);
-                      setState(() {});
+                      _showLoginSuccess();
                     }
                   }
                 },

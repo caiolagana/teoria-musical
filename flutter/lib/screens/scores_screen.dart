@@ -151,6 +151,33 @@ class _ScoresScreenState extends State<ScoresScreen> {
     );
   }
 
+  void _showLoginSuccess({VoidCallback? then}) {
+    final auth = AuthService();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text('Login realizado com sucesso',
+            style: TextStyle(color: AppColors.text, fontSize: 18)),
+        content: Text(
+          auth.displayName ?? auth.email ?? '',
+          style: const TextStyle(color: AppColors.textDim),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() {});
+              then?.call();
+            },
+            child: const Text('OK', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showBuyDialog(Score score) {
     final auth = AuthService();
 
@@ -196,8 +223,11 @@ class _ScoresScreenState extends State<ScoresScreen> {
                       await _purchases.reloadPurchases();
                       if (ctx.mounted) {
                         Navigator.pop(ctx);
-                        if (_purchases.hasAccess(score)) return;
-                        _showBuyDialog(score);
+                        _showLoginSuccess(then: () {
+                          if (!_purchases.hasAccess(score)) {
+                            _showBuyDialog(score);
+                          }
+                        });
                       }
                     }
                   },
@@ -217,7 +247,7 @@ class _ScoresScreenState extends State<ScoresScreen> {
                     await _purchases.reloadPurchases();
                     if (ctx.mounted) {
                       Navigator.pop(ctx);
-                      setState(() {});
+                      _showLoginSuccess();
                     }
                   }
                 },
