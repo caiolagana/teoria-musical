@@ -15,17 +15,22 @@ class ScoreDetailScreen extends StatelessWidget {
       appBar: AppBar(title: Text(score.title)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(score.artist,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: AppColors.textDim)),
-            const SizedBox(height: 24),
-            ...lines.map((line) => _buildLine(line)),
-          ],
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: IntrinsicWidth(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(score.artist,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: AppColors.textDim)),
+                const SizedBox(height: 24),
+                ...lines.map((line) => _buildLine(line)),
+              ],
+            ),
+          ),
         ),
       ),
     );

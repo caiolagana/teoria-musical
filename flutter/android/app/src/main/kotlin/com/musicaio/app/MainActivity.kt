@@ -1,4 +1,4 @@
-package com.musicaio.musicaio
+package com.musicaio.app
 
 import io.flutter.embedding.android.FlutterActivity
 

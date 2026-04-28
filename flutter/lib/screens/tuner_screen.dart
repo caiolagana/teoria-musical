@@ -22,10 +22,6 @@ class _TunerScreenState extends State<TunerScreen> {
   double _frequency = 0;
   String? _error;
 
-  int _chunksReceived = 0;
-  double _rmsLevel = 0;
-  double _maxSample = 0;
-  String _yinStatus = 'aguardando';
 
   StreamSubscription<List<double>>? _audioSub;
   PitchDetector? _detector;
@@ -61,10 +57,12 @@ class _TunerScreenState extends State<TunerScreen> {
     });
 
     _sampleBuffer = [];
-    _chunksReceived = 0;
 
-    AudioStreamer().sampleRate = 44100;
-    _audioSub = AudioStreamer().audioStream.listen(
+    final streamer = AudioStreamer();
+    streamer.sampleRate = 44100;
+    _detector = PitchDetector(sampleRate: 44100);
+
+    _audioSub = streamer.audioStream.listen(
       _onAudioData,
       onError: (Object e) {
         setState(() {
@@ -75,8 +73,12 @@ class _TunerScreenState extends State<TunerScreen> {
       cancelOnError: true,
     );
 
-    final rate = await AudioStreamer().actualSampleRate;
-    _detector = PitchDetector(sampleRate: rate.toInt());
+    streamer.actualSampleRate.then((rate) {
+      final actualRate = rate.toInt();
+      if (actualRate != 44100) {
+        _detector = PitchDetector(sampleRate: actualRate);
+      }
+    });
   }
 
   void _stopListening() {
@@ -92,8 +94,6 @@ class _TunerScreenState extends State<TunerScreen> {
   }
 
   void _onAudioData(List<double> chunk) {
-    _chunksReceived++;
-
     if (_detector == null) return;
 
     _sampleBuffer.addAll(chunk);
@@ -102,30 +102,17 @@ class _TunerScreenState extends State<TunerScreen> {
       final samples = _sampleBuffer.sublist(0, _bufferSize);
       _sampleBuffer = _sampleBuffer.sublist(_bufferSize ~/ 2);
 
-      var sumSq = 0.0;
-      var maxAbs = 0.0;
-      for (final s in samples) {
-        sumSq += s * s;
-        final a = s.abs();
-        if (a > maxAbs) maxAbs = a;
-      }
-      final rms = sqrt(sumSq / samples.length);
-
       final result = _detector?.detect(samples);
       if (!mounted) return;
 
       setState(() {
-        _rmsLevel = rms;
-        _maxSample = maxAbs;
         if (result != null) {
-          _yinStatus = '${result.frequency.toStringAsFixed(1)} Hz → ${result.note}${result.octave}';
           _note = result.note;
           _octave = result.octave;
           _cents = result.cents;
           _smoothCents = _smoothCents * (1 - _alpha) + _cents * _alpha;
           _frequency = result.frequency;
         } else {
-          _yinStatus = rms < 0.002 ? 'silêncio (RMS baixo)' : 'sem pitch detectado';
           _note = '--';
           _cents = 0;
           _smoothCents = 0;
@@ -272,43 +259,7 @@ class _TunerScreenState extends State<TunerScreen> {
     );
   }
 
-  Widget _buildDebugInfo() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 32),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'DEBUG',
-            style: TextStyle(
-              fontSize: 10,
-              color: AppColors.accent,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Chunks: $_chunksReceived\n'
-            'RMS: ${_rmsLevel.toStringAsFixed(6)}\n'
-            'Max: ${_maxSample.toStringAsFixed(6)}\n'
-            'Buffer: ${_sampleBuffer.length}\n'
-            'YIN: $_yinStatus',
-            style: const TextStyle(
-              fontSize: 12,
-              fontFamily: 'monospace',
-              color: AppColors.textDim,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildToggleButton() {
     return GestureDetector(

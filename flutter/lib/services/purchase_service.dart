@@ -11,7 +11,7 @@ class PurchaseService extends ChangeNotifier {
   factory PurchaseService() => _instance;
   PurchaseService._();
 
-  static const premiumProductId = 'premium_upgrade';
+  static const premiumProductId = 'musicaio_premium_upgrade';
 
   final _iap = InAppPurchase.instance;
   final _firestore = FirebaseFirestore.instance;

@@ -7,26 +7,26 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:468378495172:android:d2b8cc2839a0ca7c150191",
+        "mobilesdk_app_id": "1:468378495172:android:cdc91ab00f1c4abe150191",
         "android_client_info": {
-          "package_name": "com.musicaio.musicaio"
+          "package_name": "com.musicaio.app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "468378495172-2ehkdm0fpq990rjkjta22ngh3qccl1vf.apps.googleusercontent.com",
+          "client_id": "468378495172-ffn2mhuvdrkmo86a2ft3pcedu0u317bq.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.musicaio.musicaio",
-            "certificate_hash": "401cd45b094b5b170e6f293b34a7ceceeecfdd88"
+            "package_name": "com.musicaio.app",
+            "certificate_hash": "ad9923a2232dceaf019a9211c11b63c8037dcc33"
           }
         },
         {
-          "client_id": "468378495172-dku03tprrlfma0rtg21icp09jf0cekdr.apps.googleusercontent.com",
+          "client_id": "468378495172-ij0hv9i9kl9v5am49rfbogdr8det4vgd.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.musicaio.musicaio",
-            "certificate_hash": "ad9923a2232dceaf019a9211c11b63c8037dcc33"
+            "package_name": "com.musicaio.app",
+            "certificate_hash": "401cd45b094b5b170e6f293b34a7ceceeecfdd88"
           }
         },
         {
