@@ -103,7 +103,7 @@ class _AccountSheet extends StatelessWidget {
     final auth = AuthService();
     final premium = PremiumService();
     final purchases = PurchaseService();
-    final purchasedIds = purchases.purchasedScoreIds;
+    final purchasedIds = purchases.purchasedProductIds;
 
     return Padding(
       padding: const EdgeInsets.all(24),

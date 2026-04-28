@@ -17,16 +17,17 @@ class PurchaseService extends ChangeNotifier {
   final _firestore = FirebaseFirestore.instance;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
 
-  final Set<String> _purchasedScoreIds = {};
+  final Set<String> _purchasedProductIds = {};
   bool get initialized => _initialized;
   bool _initialized = false;
 
-  Set<String> get purchasedScoreIds => Set.unmodifiable(_purchasedScoreIds);
+  Set<String> get purchasedProductIds => Set.unmodifiable(_purchasedProductIds);
 
-  bool hasAccess(Score score) => score.free || _purchasedScoreIds.contains(score.id);
+  bool hasAccess(Score score) =>
+      score.free || _purchasedProductIds.contains(score.productId);
 
   Future<void> reloadPurchases() async {
-    _purchasedScoreIds.clear();
+    _purchasedProductIds.clear();
     await _loadPurchasesFromFirestore();
   }
 
@@ -59,26 +60,19 @@ class PurchaseService extends ChangeNotifier {
   }
 
   Future<void> buyScore(Score score) async {
-    if (score.free || score.productId == null) {
-      debugPrint('buyScore: skipped (free=${score.free}, productId=${score.productId})');
-      return;
-    }
+    if (score.free || score.productId == null) return;
 
-    final available = await _iap.isAvailable();
-    debugPrint('buyScore: IAP available=$available');
-    if (!available) {
+    if (!await _iap.isAvailable()) {
       if (kDebugMode) {
-        await _grantAccess(score.id);
+        await _grantAccess(score.productId!);
       }
       return;
     }
 
     final response = await _iap.queryProductDetails({score.productId!});
-    debugPrint('buyScore: found ${response.productDetails.length} products, errors: ${response.notFoundIDs}');
     if (response.productDetails.isEmpty) return;
 
     final product = response.productDetails.first;
-    debugPrint('buyScore: buying ${product.id} - ${product.price}');
     final purchaseParam = PurchaseParam(productDetails: product);
     await _iap.buyConsumable(purchaseParam: purchaseParam);
   }
@@ -100,11 +94,7 @@ class PurchaseService extends ChangeNotifier {
       await _grantPremium();
       return;
     }
-
-    final scoreId = _scoreIdFromProductId(purchase.productID);
-    if (scoreId != null) {
-      await _grantAccess(scoreId);
-    }
+    await _grantAccess(purchase.productID);
   }
 
   Future<void> _grantPremium() async {
@@ -122,8 +112,8 @@ class PurchaseService extends ChangeNotifier {
         .set({'purchasedAt': FieldValue.serverTimestamp()});
   }
 
-  Future<void> _grantAccess(String scoreId) async {
-    _purchasedScoreIds.add(scoreId);
+  Future<void> _grantAccess(String productId) async {
+    _purchasedProductIds.add(productId);
     notifyListeners();
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -133,7 +123,7 @@ class PurchaseService extends ChangeNotifier {
         .collection('users')
         .doc(uid)
         .collection('purchases')
-        .doc(scoreId)
+        .doc(productId)
         .set({'purchasedAt': FieldValue.serverTimestamp()});
   }
 
@@ -151,18 +141,10 @@ class PurchaseService extends ChangeNotifier {
       if (doc.id == 'premium') {
         PremiumService().setPremium(true);
       } else {
-        _purchasedScoreIds.add(doc.id);
+        _purchasedProductIds.add(doc.id);
       }
     }
     notifyListeners();
-  }
-
-  String? _scoreIdFromProductId(String productId) {
-    final prefix = 'score_';
-    if (productId.startsWith(prefix)) {
-      return productId.substring(prefix.length);
-    }
-    return null;
   }
 
   @override
