@@ -59,9 +59,14 @@ class PurchaseService extends ChangeNotifier {
   }
 
   Future<void> buyScore(Score score) async {
-    if (score.free || score.productId == null) return;
+    if (score.free || score.productId == null) {
+      debugPrint('buyScore: skipped (free=${score.free}, productId=${score.productId})');
+      return;
+    }
 
-    if (!await _iap.isAvailable()) {
+    final available = await _iap.isAvailable();
+    debugPrint('buyScore: IAP available=$available');
+    if (!available) {
       if (kDebugMode) {
         await _grantAccess(score.id);
       }
@@ -69,9 +74,11 @@ class PurchaseService extends ChangeNotifier {
     }
 
     final response = await _iap.queryProductDetails({score.productId!});
+    debugPrint('buyScore: found ${response.productDetails.length} products, errors: ${response.notFoundIDs}');
     if (response.productDetails.isEmpty) return;
 
     final product = response.productDetails.first;
+    debugPrint('buyScore: buying ${product.id} - ${product.price}');
     final purchaseParam = PurchaseParam(productDetails: product);
     await _iap.buyConsumable(purchaseParam: purchaseParam);
   }
