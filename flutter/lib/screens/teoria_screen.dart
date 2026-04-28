@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/music_theory.dart';
+import '../services/auth_service.dart';
 import '../services/premium_service.dart';
+import '../services/purchase_service.dart';
 import '../services/tuning_service.dart';
 import 'widgets/note_selector.dart';
 import 'widgets/fretboard_widget.dart';
@@ -26,6 +28,20 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
   String? _selectedScale;
   String? _selectedChord;
   String? _selectedFieldType;
+
+  @override
+  void initState() {
+    super.initState();
+    _premium.addListener(_onPremiumChanged);
+  }
+
+  @override
+  void dispose() {
+    _premium.removeListener(_onPremiumChanged);
+    super.dispose();
+  }
+
+  void _onPremiumChanged() => setState(() {});
 
   void _setMode(TeoriaMode mode) {
     setState(() {
@@ -208,29 +224,92 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
   }
 
   void _showPremiumDialog() {
-    showDialog(
+    final auth = AuthService();
+
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('Premium', style: TextStyle(color: AppColors.text)),
-        content: const Text(
-          'Este conteúdo está disponível na versão Premium.',
-          style: TextStyle(color: AppColors.textDim),
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Premium',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 8),
+            const Text(
+              'Desbloqueie todas as escalas, acordes\ne campos harmônicos.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: AppColors.textDim),
+            ),
+            const SizedBox(height: 24),
+            if (!auth.isSignedIn) ...[
+              const Text(
+                'Entre com sua conta Google para\nsalvar a compra de forma segura.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: AppColors.textDim),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () async {
+                    final success = await auth.signInWithGoogle();
+                    if (success) {
+                      await PurchaseService().reloadPurchases();
+                      if (ctx.mounted) {
+                        Navigator.pop(ctx);
+                        _showPremiumDialog();
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.login),
+                  label: const Text('Entrar com Google'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: AppColors.black,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () async {
+                  final success = await auth.signInWithGoogle();
+                  if (success) {
+                    await PurchaseService().reloadPurchases();
+                    if (ctx.mounted) {
+                      Navigator.pop(ctx);
+                      setState(() {});
+                    }
+                  }
+                },
+                child: const Text(
+                  'Já comprou? Restaurar compras',
+                  style: TextStyle(fontSize: 13, color: AppColors.textDim),
+                ),
+              ),
+            ] else ...[
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    PurchaseService().buyPremium();
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: AppColors.black,
+                  ),
+                  child: const Text('Fazer Upgrade — R\$ 9,90'),
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Fechar', style: TextStyle(color: AppColors.textDim)),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              // TODO: integrar com Google Play Billing
-            },
-            child: const Text('Upgrade', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
-          ),
-        ],
       ),
     );
   }

@@ -4,11 +4,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import '../models/score.dart';
+import 'premium_service.dart';
 
 class PurchaseService extends ChangeNotifier {
   static final PurchaseService _instance = PurchaseService._();
   factory PurchaseService() => _instance;
   PurchaseService._();
+
+  static const premiumProductId = 'premium_upgrade';
 
   final _iap = InAppPurchase.instance;
   final _firestore = FirebaseFirestore.instance;
@@ -20,6 +23,11 @@ class PurchaseService extends ChangeNotifier {
 
   bool hasAccess(Score score) => score.free || _purchasedScoreIds.contains(score.id);
 
+  Future<void> reloadPurchases() async {
+    _purchasedScoreIds.clear();
+    await _loadPurchasesFromFirestore();
+  }
+
   Future<void> init() async {
     if (_initialized) return;
 
@@ -30,6 +38,22 @@ class PurchaseService extends ChangeNotifier {
     }
 
     _initialized = true;
+  }
+
+  Future<void> buyPremium() async {
+    if (!await _iap.isAvailable()) {
+      if (kDebugMode) {
+        await _grantPremium();
+      }
+      return;
+    }
+
+    final response = await _iap.queryProductDetails({premiumProductId});
+    if (response.productDetails.isEmpty) return;
+
+    final product = response.productDetails.first;
+    final purchaseParam = PurchaseParam(productDetails: product);
+    await _iap.buyNonConsumable(purchaseParam: purchaseParam);
   }
 
   Future<void> buyScore(Score score) async {
@@ -63,10 +87,30 @@ class PurchaseService extends ChangeNotifier {
   }
 
   Future<void> _verifyAndDeliver(PurchaseDetails purchase) async {
+    if (purchase.productID == premiumProductId) {
+      await _grantPremium();
+      return;
+    }
+
     final scoreId = _scoreIdFromProductId(purchase.productID);
     if (scoreId != null) {
       await _grantAccess(scoreId);
     }
+  }
+
+  Future<void> _grantPremium() async {
+    PremiumService().setPremium(true);
+    notifyListeners();
+
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('purchases')
+        .doc('premium')
+        .set({'purchasedAt': FieldValue.serverTimestamp()});
   }
 
   Future<void> _grantAccess(String scoreId) async {
@@ -94,7 +138,13 @@ class PurchaseService extends ChangeNotifier {
         .collection('purchases')
         .get();
 
-    _purchasedScoreIds.addAll(snapshot.docs.map((d) => d.id));
+    for (final doc in snapshot.docs) {
+      if (doc.id == 'premium') {
+        PremiumService().setPremium(true);
+      } else {
+        _purchasedScoreIds.add(doc.id);
+      }
+    }
     notifyListeners();
   }
 

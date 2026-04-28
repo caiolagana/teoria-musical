@@ -12,7 +12,28 @@
           "package_name": "com.musicaio.musicaio"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "468378495172-2ehkdm0fpq990rjkjta22ngh3qccl1vf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.musicaio.musicaio",
+            "certificate_hash": "401cd45b094b5b170e6f293b34a7ceceeecfdd88"
+          }
+        },
+        {
+          "client_id": "468378495172-dku03tprrlfma0rtg21icp09jf0cekdr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.musicaio.musicaio",
+            "certificate_hash": "ad9923a2232dceaf019a9211c11b63c8037dcc33"
+          }
+        },
+        {
+          "client_id": "468378495172-ku6o0i7l671svevocslofarouafrpov3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDtc5-CwXakCjM73PyA10m8iucbXaFiviA"
@@ -20,7 +41,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "468378495172-ku6o0i7l671svevocslofarouafrpov3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

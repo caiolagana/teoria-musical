@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../services/auth_service.dart';
 import '../services/score_service.dart';
 import '../services/purchase_service.dart';
 import '../models/score.dart';
@@ -151,41 +152,99 @@ class _ScoresScreenState extends State<ScoresScreen> {
   }
 
   void _showBuyDialog(Score score) {
-    showDialog(
+    final auth = AuthService();
+
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text(score.title, style: const TextStyle(color: AppColors.text, fontSize: 18)),
-        content: Column(
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(score.artist, style: const TextStyle(color: AppColors.textDim)),
+            Text(score.title,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 4),
+            Text(score.artist,
+                style: const TextStyle(fontSize: 14, color: AppColors.textDim)),
             const SizedBox(height: 16),
             Text(
               'R\$ ${score.price.toStringAsFixed(2)}',
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 28,
                 fontWeight: FontWeight.w300,
                 color: AppColors.accent,
               ),
             ),
+            const SizedBox(height: 24),
+            if (!auth.isSignedIn) ...[
+              const Text(
+                'Entre com sua conta Google para\nsalvar a compra de forma segura.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: AppColors.textDim),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () async {
+                    final success = await auth.signInWithGoogle();
+                    if (success) {
+                      await _purchases.reloadPurchases();
+                      if (ctx.mounted) {
+                        Navigator.pop(ctx);
+                        if (_purchases.hasAccess(score)) return;
+                        _showBuyDialog(score);
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.login),
+                  label: const Text('Entrar com Google'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: AppColors.black,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () async {
+                  final success = await auth.signInWithGoogle();
+                  if (success) {
+                    await _purchases.reloadPurchases();
+                    if (ctx.mounted) {
+                      Navigator.pop(ctx);
+                      setState(() {});
+                    }
+                  }
+                },
+                child: const Text(
+                  'Já comprou? Restaurar compras',
+                  style: TextStyle(fontSize: 13, color: AppColors.textDim),
+                ),
+              ),
+            ] else ...[
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _purchases.buyScore(score);
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: AppColors.black,
+                  ),
+                  child: const Text('Comprar'),
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar', style: TextStyle(color: AppColors.textDim)),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _purchases.buyScore(score);
-            },
-            child: const Text('Comprar', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
-          ),
-        ],
       ),
     );
   }
