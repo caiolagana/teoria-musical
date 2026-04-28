@@ -21,6 +21,8 @@ class PurchaseService extends ChangeNotifier {
   bool get initialized => _initialized;
   bool _initialized = false;
 
+  Set<String> get purchasedScoreIds => Set.unmodifiable(_purchasedScoreIds);
+
   bool hasAccess(Score score) => score.free || _purchasedScoreIds.contains(score.id);
 
   Future<void> reloadPurchases() async {
