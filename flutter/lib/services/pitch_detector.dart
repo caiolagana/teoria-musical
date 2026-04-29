@@ -15,6 +15,13 @@ class PitchResult {
   });
 }
 
+class DetectionResult {
+  final PitchResult? pitch;
+  final Float64List cmnd;
+
+  const DetectionResult({this.pitch, required this.cmnd});
+}
+
 class PitchDetector {
   final int sampleRate;
   final double threshold;
@@ -26,18 +33,27 @@ class PitchDetector {
 
   PitchDetector({required this.sampleRate, this.threshold = 0.15});
 
-  PitchResult? detect(List<double> buffer) {
+  DetectionResult? detect(List<double> buffer) {
     if (buffer.length < 512) return null;
 
-    if (_rms(buffer) < 0.002) return null;
+    final cmnd = _computeCmnd(buffer);
 
-    final period = _yin(buffer);
-    if (period == null) return null;
+    if (_rms(buffer) < 0.002) {
+      return DetectionResult(cmnd: cmnd);
+    }
+
+    final period = _findPeriod(cmnd);
+    if (period == null) return DetectionResult(cmnd: cmnd);
 
     final frequency = sampleRate / period;
-    if (frequency < 60 || frequency > 1500) return null;
+    if (frequency < 60 || frequency > 1500) {
+      return DetectionResult(cmnd: cmnd);
+    }
 
-    return _frequencyToResult(frequency);
+    return DetectionResult(
+      pitch: _frequencyToResult(frequency),
+      cmnd: cmnd,
+    );
   }
 
   double _rms(List<double> buffer) {
@@ -48,11 +64,10 @@ class PitchDetector {
     return sqrt(sum / buffer.length);
   }
 
-  double? _yin(List<double> buffer) {
+  Float64List _computeCmnd(List<double> buffer) {
     final halfLen = buffer.length ~/ 2;
     final diff = Float64List(halfLen);
 
-    // Step 2: Difference function
     for (int tau = 0; tau < halfLen; tau++) {
       var sum = 0.0;
       for (int j = 0; j < halfLen; j++) {
@@ -62,7 +77,6 @@ class PitchDetector {
       diff[tau] = sum;
     }
 
-    // Step 3: Cumulative mean normalized difference
     diff[0] = 1.0;
     var runningSum = 0.0;
     for (int tau = 1; tau < halfLen; tau++) {
@@ -70,11 +84,15 @@ class PitchDetector {
       diff[tau] = diff[tau] * tau / runningSum;
     }
 
-    // Step 4: Absolute threshold — find first dip below threshold
+    return diff;
+  }
+
+  double? _findPeriod(Float64List cmnd) {
+    final halfLen = cmnd.length;
     int? tauEstimate;
     for (int tau = 2; tau < halfLen; tau++) {
-      if (diff[tau] < threshold) {
-        while (tau + 1 < halfLen && diff[tau + 1] < diff[tau]) {
+      if (cmnd[tau] < threshold) {
+        while (tau + 1 < halfLen && cmnd[tau + 1] < cmnd[tau]) {
           tau++;
         }
         tauEstimate = tau;
@@ -83,9 +101,7 @@ class PitchDetector {
     }
 
     if (tauEstimate == null) return null;
-
-    // Step 5: Parabolic interpolation
-    return _parabolicInterpolation(diff, tauEstimate);
+    return _parabolicInterpolation(cmnd, tauEstimate);
   }
 
   double _parabolicInterpolation(Float64List data, int tau) {
@@ -114,4 +130,3 @@ class PitchDetector {
     );
   }
 }
-

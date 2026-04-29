@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:audio_streamer/audio_streamer.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -22,13 +23,14 @@ class _TunerScreenState extends State<TunerScreen> {
   double _frequency = 0;
   String? _error;
 
+  Float64List _cmndBuffer = Float64List(0);
 
   StreamSubscription<List<double>>? _audioSub;
   PitchDetector? _detector;
   List<double> _sampleBuffer = [];
 
-  static const _alpha = 0.25; // Controla a suavidade da agulha: 0 = parado, 1 = sem suavização
-  static const _bufferSize = 2 * 4096; // 93ms de áudio a cada 4096 amostras
+  static const _alpha = 0.25;
+  static const _bufferSize = 2 * 4096;
 
   @override
   void dispose() {
@@ -90,6 +92,7 @@ class _TunerScreenState extends State<TunerScreen> {
       _note = '--';
       _cents = 0;
       _frequency = 0;
+      _cmndBuffer = Float64List(0);
     });
   }
 
@@ -107,11 +110,20 @@ class _TunerScreenState extends State<TunerScreen> {
 
       setState(() {
         if (result != null) {
-          _note = result.note;
-          _octave = result.octave;
-          _cents = result.cents;
-          _smoothCents = _smoothCents * (1 - _alpha) + _cents * _alpha;
-          _frequency = result.frequency;
+          _cmndBuffer = result.cmnd;
+          final pitch = result.pitch;
+          if (pitch != null) {
+            _note = pitch.note;
+            _octave = pitch.octave;
+            _cents = pitch.cents;
+            _smoothCents = _smoothCents * (1 - _alpha) + _cents * _alpha;
+            _frequency = pitch.frequency;
+          } else {
+            _note = '--';
+            _cents = 0;
+            _smoothCents = 0;
+            _frequency = 0;
+          }
         } else {
           _note = '--';
           _cents = 0;
@@ -141,18 +153,20 @@ class _TunerScreenState extends State<TunerScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            const Spacer(flex: 2),
-            _buildGauge(),
-            const SizedBox(height: 32),
-            _buildNoteDisplay(),
             const SizedBox(height: 8),
+            _buildGauge(),
+            const SizedBox(height: 12),
+            _buildNoteDisplay(),
+            const SizedBox(height: 4),
             _buildFrequencyDisplay(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
             _buildDeviationBar(),
-            const Spacer(flex: 3),
+            const SizedBox(height: 16),
+            _buildGraphs(),
+            const Spacer(),
             if (_error != null) _buildError(),
             _buildToggleButton(),
-            const SizedBox(height: 48),
+            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -249,6 +263,34 @@ class _TunerScreenState extends State<TunerScreen> {
     );
   }
 
+  Widget _buildGraphs() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: SizedBox(
+        height: 140,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'CMND (YIN)',
+              style: TextStyle(fontSize: 10, color: AppColors.textDim),
+            ),
+            const SizedBox(height: 4),
+            Expanded(
+              child: CustomPaint(
+                size: Size.infinite,
+                painter: _CmndPainter(
+                  cmnd: _cmndBuffer,
+                  threshold: _detector?.threshold ?? 0.15,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildError() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -258,8 +300,6 @@ class _TunerScreenState extends State<TunerScreen> {
       ),
     );
   }
-
-
 
   Widget _buildToggleButton() {
     return GestureDetector(
@@ -284,6 +324,10 @@ class _TunerScreenState extends State<TunerScreen> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Painters
+// ---------------------------------------------------------------------------
 
 class _GaugePainter extends CustomPainter {
   final double cents;
@@ -424,4 +468,72 @@ class _DeviationBarPainter extends CustomPainter {
   @override
   bool shouldRepaint(_DeviationBarPainter old) =>
       old.cents != cents || old.active != active || old.accentColor != accentColor;
+}
+
+class _CmndPainter extends CustomPainter {
+  final Float64List cmnd;
+  final double threshold;
+
+  _CmndPainter({required this.cmnd, required this.threshold});
+
+  static const _maxDisplay = 1.5;
+  static const _maxTau = 800;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bgPaint = Paint()
+      ..color = AppColors.surface
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        const Radius.circular(4),
+      ),
+      bgPaint,
+    );
+
+    // Threshold line
+    final thresholdY = (threshold / _maxDisplay) * size.height;
+    final thresholdPaint = Paint()
+      ..color = AppColors.accent.withAlpha(120)
+      ..strokeWidth = 1;
+    canvas.drawLine(
+      Offset(0, thresholdY),
+      Offset(size.width, thresholdY),
+      thresholdPaint,
+    );
+
+    if (cmnd.isEmpty) return;
+
+    final displayTau = cmnd.length.clamp(0, _maxTau);
+    if (displayTau < 3) return;
+
+    final paint = Paint()
+      ..color = const Color(0xFF4CAF50)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+    final pixelCount = size.width.toInt();
+
+    for (int x = 0; x < pixelCount; x++) {
+      final tau = 2 + ((x / size.width) * (displayTau - 2)).toInt();
+      if (tau >= cmnd.length) break;
+
+      final y =
+          (cmnd[tau].clamp(0.0, _maxDisplay) / _maxDisplay * size.height);
+
+      if (x == 0) {
+        path.moveTo(x.toDouble(), y);
+      } else {
+        path.lineTo(x.toDouble(), y);
+      }
+    }
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_CmndPainter old) =>
+      !identical(old.cmnd, cmnd) || old.threshold != threshold;
 }
