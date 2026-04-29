@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <defs>
+    <radialGradient id="glow" cx="280" cy="250" r="350" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2a1d0a" />
+      <stop offset="100%" stop-color="#151515" />
+    </radialGradient>
+  </defs>
+
+  <rect width="1024" height="500" fill="#151515"/>
+  <rect width="1024" height="500" fill="url(#glow)"/>
+
+  <svg x="60" y="30" width="440" height="440" viewBox="0 -960 960 960">
+    <path d="M440-80v-800h80v800h-80Z" fill="#f5d2a4"/>
+    <path d="M280-240v-480h80v480h-80Z" fill="#C48530"/>
+    <path d="M600-240v-480h80v480h-80Z" fill="#C48530"/>
+    <path d="M120-400v-160h80v160h-80Z" fill="#86510b"/>
+    <path d="M760-400v-160h80v160h-80Z" fill="#86510b"/>
+  </svg>
+
+  <text x="540" y="255" font-family="sans-serif" font-size="40" font-weight="bold" fill="#f5d2a4">Teoria musical</text>
+  <text x="540" y="305" font-family="sans-serif" font-size="30" fill="#C48530">Afinador de instrumentos</text>
+  <text x="540" y="345" font-family="sans-serif" font-size="30" fill="#C48530">Cifras</text>
+</svg>
