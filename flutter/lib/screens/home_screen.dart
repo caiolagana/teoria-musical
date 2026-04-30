@@ -53,21 +53,21 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_tabIndex],
-      floatingActionButton: _auth.isSignedIn
-          ? GestureDetector(
-              onTap: _showAccountSheet,
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.surface,
-                  border: Border.all(color: AppColors.accent, width: 2),
-                ),
-                child: const Icon(Icons.person, color: AppColors.text),
+      floatingActionButton: GestureDetector(
+            onTap: _auth.isSignedIn
+                ? _showAccountSheet
+                : () => _auth.signInWithGoogle(),
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.accent, width: 2),
               ),
-            )
-          : null,
+              child: const Icon(Icons.person, color: AppColors.text),
+            ),
+          ),
       bottomNavigationBar: NavigationBar(
         backgroundColor: AppColors.surface,
         indicatorColor: AppColors.accent,
