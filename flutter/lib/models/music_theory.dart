@@ -135,6 +135,35 @@ String noteName(int value, [String root = 'C']) {
   return _chromaticFor(root)[((value % 12) + 12) % 12];
 }
 
+String _parseRoot(String chord) {
+  if (chord.length >= 2 && (chord[1] == '#' || chord[1] == 'b')) {
+    return chord.substring(0, 2);
+  }
+  return chord.substring(0, 1);
+}
+
+String transposeChord(String chord, int semitones, String targetKey) {
+  if (semitones == 0) return chord;
+  final chromatic = _chromaticFor(targetKey);
+
+  final root = _parseRoot(chord);
+  final suffix = chord.substring(root.length);
+
+  final newRoot = chromatic[(noteValue(root) + semitones) % 12];
+
+  final slashIdx = suffix.indexOf('/');
+  if (slashIdx >= 0 && slashIdx + 1 < suffix.length) {
+    final beforeSlash = suffix.substring(0, slashIdx);
+    final bassStr = suffix.substring(slashIdx + 1);
+    final bassRoot = _parseRoot(bassStr);
+    final bassRemainder = bassStr.substring(bassRoot.length);
+    final newBass = chromatic[(noteValue(bassRoot) + semitones) % 12];
+    return '$newRoot$beforeSlash/$newBass$bassRemainder';
+  }
+
+  return '$newRoot$suffix';
+}
+
 List<String> buildScale(String root, String formulaName) {
   final formula = scaleFormulas[formulaName]!;
   final chromatic = _chromaticFor(root);

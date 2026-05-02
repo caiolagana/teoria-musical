@@ -21,6 +21,7 @@ class Score {
   final bool free;
   final String? productId;
   final double price;
+  final String? originalKey;
 
   Score({
     required this.id,
@@ -31,6 +32,7 @@ class Score {
     this.free = true,
     this.productId,
     this.price = 0,
+    this.originalKey,
   });
 
   static double _parsePrice(dynamic value) {
@@ -54,6 +56,7 @@ class Score {
       free: data['free'] as bool? ?? true,
       productId: data['productId'] as String?,
       price: _parsePrice(data['price']),
+      originalKey: data['originalKey'] as String?,
     );
   }
 }
