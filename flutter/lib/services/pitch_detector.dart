@@ -18,20 +18,39 @@ class PitchResult {
 class PitchDetector {
   final int sampleRate;
   final double threshold;
+  final double discardedInitialNoise;
+
+  bool _wasSilent = true;
 
   static const _noteNames = [
     'C', 'C#', 'D', 'D#', 'E', 'F',
     'F#', 'G', 'G#', 'A', 'A#', 'B',
   ];
 
-  PitchDetector({required this.sampleRate, this.threshold = 0.15});
+  PitchDetector({
+    required this.sampleRate,
+    this.threshold = 0.15,
+    this.discardedInitialNoise = 0.1, // Porcentagem inicial do buffer descartada para cálculo da nota
+  });
 
   PitchResult? detect(List<double> buffer) {
     if (buffer.length < 512) return null;
 
-    if (_rms(buffer) < 0.002) return null;
+    if (_rms(buffer) < 0.002) {
+      _wasSilent = true;
+      return null;
+    }
 
-    final period = _yin(buffer);
+    List<double> yinBuffer;
+    if (_wasSilent) {
+      final trimCount = (buffer.length * discardedInitialNoise).round();
+      yinBuffer = buffer.sublist(trimCount);
+    } else {
+      yinBuffer = buffer;
+    }
+    _wasSilent = false;
+
+    final period = _yin(yinBuffer);
     if (period == null) return null;
 
     final frequency = sampleRate / period;
