@@ -64,8 +64,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 shape: BoxShape.circle,
                 color: AppColors.surface,
                 border: Border.all(color: AppColors.accent, width: 2),
+                image: _auth.photoUrl != null
+                    ? DecorationImage(
+                        image: NetworkImage(_auth.photoUrl!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
               ),
-              child: const Icon(Icons.person, color: AppColors.text),
+              child: _auth.photoUrl == null
+                  ? const Icon(Icons.person, color: AppColors.text)
+                  : null,
             ),
           ),
       bottomNavigationBar: NavigationBar(

@@ -11,11 +11,13 @@ class AuthService extends ChangeNotifier {
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
 
+  String? _googlePhotoUrl;
+
   User? get currentUser => _auth.currentUser;
   bool get isSignedIn => currentUser != null && !currentUser!.isAnonymous;
   String? get displayName => currentUser?.displayName;
   String? get email => currentUser?.email;
-  String? get photoUrl => currentUser?.photoURL;
+  String? get photoUrl => _googlePhotoUrl ?? currentUser?.photoURL;
 
   Future<void> ensureAuthenticated() async {
     if (_auth.currentUser == null) {
@@ -27,6 +29,8 @@ class AuthService extends ChangeNotifier {
     try {
       final googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) return false;
+
+      _googlePhotoUrl = googleUser.photoUrl;
 
       final googleAuth = await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
@@ -50,6 +54,11 @@ class AuthService extends ChangeNotifier {
         await _auth.signInWithCredential(credential);
       }
 
+      if (currentUser != null && currentUser!.photoURL == null && _googlePhotoUrl != null) {
+        await currentUser!.updatePhotoURL(_googlePhotoUrl);
+        await currentUser!.reload();
+      }
+
       if (anonymousUid != null && currentUser != null && anonymousUid != currentUser!.uid) {
         await _migratePurchases(anonymousUid, currentUser!.uid);
       }
@@ -63,6 +72,7 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    _googlePhotoUrl = null;
     await GoogleSignIn().signOut();
     await _auth.signInAnonymously();
     notifyListeners();
