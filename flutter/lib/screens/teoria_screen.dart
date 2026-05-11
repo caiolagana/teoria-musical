@@ -288,7 +288,9 @@ class _TeoriaScreenState extends State<TeoriaScreen> {
                       await PurchaseService().reloadPurchases();
                       if (ctx.mounted) {
                         Navigator.pop(ctx);
-                        _showLoginSuccess(then: _showPremiumDialog);
+                        _showLoginSuccess(
+                          then: _premium.isPremium ? null : _showPremiumDialog,
+                        );
                       }
                     }
                   },

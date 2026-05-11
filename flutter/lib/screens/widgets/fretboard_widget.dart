@@ -37,7 +37,7 @@ class FretboardWidget extends StatelessWidget {
             ...fretNums.map((f) => _headerCell(f)),
           ],
         ),
-        ...diagram.rows.map((row) => TableRow(
+        ...diagram.rows.reversed.map((row) => TableRow(
           children: [
             _stringLabel(row),
             ...row.cells.map((cell) => _fretCell(cell)),
